@@ -2,6 +2,7 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
+import { ApexOptions } from "apexcharts";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -38,7 +39,7 @@ const ApexCandleChart: React.FC<ApexCandleChartProps> = ({
     .slice(-10)
     .map((_, i) => chartData.length - 10 + i);
 
-  const annotations = {
+  const annotations: ApexOptions["annotations"] = {
     xaxis: last10Indices.map((index) => {
       const candle = data[index];
       const isGreen = candle.close >= candle.open;
@@ -60,7 +61,7 @@ const ApexCandleChart: React.FC<ApexCandleChartProps> = ({
     }),
   };
 
-  const options: any = {
+  const options: ApexOptions = {
     chart: {
       type: "candlestick",
       height,
@@ -82,7 +83,7 @@ const ApexCandleChart: React.FC<ApexCandleChartProps> = ({
     },
     tooltip: {
       shared: true,
-      custom: ({ seriesIndex, dataPointIndex, w }: any) => {
+      custom: ({ seriesIndex, dataPointIndex, w }) => {
         const dataPoint =
           w.globals.initialSeries[seriesIndex].data[dataPointIndex];
         const [open, high, low, close] = dataPoint.y;
