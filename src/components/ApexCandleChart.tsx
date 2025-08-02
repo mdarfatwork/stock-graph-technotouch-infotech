@@ -11,6 +11,7 @@ export interface CandleData {
   high: number;
   low: number;
   close: number;
+  volume?: number;
 }
 
 interface ApexCandleChartProps {
@@ -26,23 +27,35 @@ const ApexCandleChart: React.FC<ApexCandleChartProps> = ({
   height = 500,
   className,
 }) => {
-  const chartData = data.map((item) => ({
-    x: new Date(item.time).getTime(),
+  const chartData = data.map((item, index) => ({
+    x: index,
     y: [item.open, item.high, item.low, item.close],
   }));
 
-  // Generate background stripes as x-axis annotations
+  const categories = data.map((item) => item.time);
+
+  const last10Indices = chartData
+    .slice(-10)
+    .map((_, i) => chartData.length - 10 + i);
+
   const annotations = {
-    xaxis: data.map((item, i) => {
-      const start = new Date(item.time).getTime();
-      const next = data[i + 1]
-        ? new Date(data[i + 1].time).getTime()
-        : start + 24 * 60 * 60 * 1000; // next day fallback
+    xaxis: last10Indices.map((index) => {
+      const candle = data[index];
+      const isGreen = candle.close >= candle.open;
 
       return {
-        x: start,
-        x2: next,
-        fillColor: item.close >= item.open ? "rgba(38, 166, 154, 0.1)" : "rgba(239, 83, 80, 0.1)",
+        x: index,
+        strokeDashArray: 0,
+        borderColor: isGreen ? "#26a69a" : "#ef5350",
+        fillColor: isGreen ? "rgba(38,166,154,0.15)" : "rgba(239,83,80,0.15)",
+        opacity: 0.5,
+        label: {
+          text: isGreen ? "Bull" : "Bear",
+          style: {
+            color: "#fff",
+            background: isGreen ? "#26a69a" : "#ef5350",
+          },
+        },
       };
     }),
   };
@@ -51,23 +64,48 @@ const ApexCandleChart: React.FC<ApexCandleChartProps> = ({
     chart: {
       type: "candlestick",
       height,
+      toolbar: { show: true },
       background: "#ffffff",
-      toolbar: {
-        show: true,
-      },
     },
-    annotations,
     title: {
-      text: "Candlestick Chart with Trend Stripes",
+      text: "Candlestick Chart",
       align: "left",
     },
     xaxis: {
-      type: "datetime",
-    },
-    yaxis: {
-      tooltip: { enabled: true },
+      type: "category",
+      categories: categories,
       labels: {
-        formatter: (value: number) => `₹${value.toFixed(2)}`,
+        rotate: -45,
+        rotateAlways: false,
+      },
+      tooltip: { enabled: false },
+    },
+    tooltip: {
+      shared: true,
+      custom: ({ seriesIndex, dataPointIndex, w }: any) => {
+        const dataPoint =
+          w.globals.initialSeries[seriesIndex].data[dataPointIndex];
+        const [open, high, low, close] = dataPoint.y;
+
+        const candle = data[dataPointIndex];
+        const date = new Date(candle.time);
+
+        const dateTimeString = `${date.toLocaleDateString(
+          "en-GB"
+        )} ${date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}`;
+
+        return `
+      <div class="bg-white p-2 border rounded shadow">
+        <div class="font-semibold mb-1">${dateTimeString}</div>
+        <div class="text-gray-600">Open: ₹${open.toFixed(2)}</div>
+        <div class="text-gray-600">High: ₹${high.toFixed(2)}</div>
+        <div class="text-gray-600">Low: ₹${low.toFixed(2)}</div>
+        <div class="text-gray-600">Close: ₹${close.toFixed(2)}</div>
+      </div>
+    `;
       },
     },
     plotOptions: {
@@ -79,36 +117,11 @@ const ApexCandleChart: React.FC<ApexCandleChartProps> = ({
         wick: { useFillColor: true },
       },
     },
-    tooltip: {
-      custom: ({ seriesIndex, dataPointIndex, w }: any) => {
-        const data = w.globals.initialSeries[seriesIndex].data[dataPointIndex];
-        const [open, high, low, close] = data.y;
-        const date = new Date(data.x).toLocaleDateString();
-        const isGreen = close >= open;
-
-        return `
-          <div class="bg-white p-3 border rounded shadow-lg">
-            <div class="font-semibold mb-2">${date}</div>
-            <div class="space-y-1">
-              <div class="text-gray-600">Open: ₹${open.toFixed(2)}</div>
-              <div style="color: ${isGreen ? "#26a69a" : "#ef5350"}">
-                Close: ₹${close.toFixed(2)}
-              </div>
-              <div class="text-gray-600">High: ₹${high.toFixed(2)}</div>
-              <div class="text-gray-600">Low: ₹${low.toFixed(2)}</div>
-            </div>
-          </div>
-        `;
-      },
-    },
+    grid: { borderColor: "#f0f0f0", strokeDashArray: 3 },
+    annotations,
   };
 
-  const series = [
-    {
-      name: "Price",
-      data: chartData,
-    },
-  ];
+  const series = [{ name: "Price", data: chartData }];
 
   return (
     <div className={`apex-candlestick-chart ${className}`}>
