@@ -109,33 +109,27 @@ const ApexCandleChart: React.FC<ApexCandleChartProps> = ({
       },
     },
     xaxis: {
+      type: "numeric",
+      tickPlacement: "on",
       labels: {
+        rotateAlways: false,
+        hideOverlappingLabels: true,
         style: {
           colors: "#666",
           fontSize: "12px",
           fontWeight: "500",
         },
-        formatter: (
-          value: string,
-          timestamp?: number,
-          opts?: FormatterOptions
-        ) => {
+        formatter: (value: string, _?: number, opts?: FormatterOptions) => {
           const index = parseInt(value);
-
-          if (isNaN(index) || index < 0 || index >= categories.length) {
+          if (isNaN(index) || index < 0 || index >= categories.length)
             return "";
-          }
 
-          const dateStr = categories[index];
-          const date = new Date(dateStr);
+          const date = new Date(categories[index]);
+          if (isNaN(date.getTime())) return "";
 
-          if (isNaN(date.getTime())) {
-            return "";
-          }
-
-          const visibleRange =
-            (opts?.w?.globals?.maxX ?? data.length) -
-            (opts?.w?.globals?.minX ?? 0);
+          const maxX = opts?.w?.globals?.maxX ?? data.length;
+          const minX = opts?.w?.globals?.minX ?? 0;
+          const visibleRange = maxX - minX;
           const zoomLevel = visibleRange / data.length;
 
           if (zoomLevel > 0.8) {
@@ -163,9 +157,7 @@ const ApexCandleChart: React.FC<ApexCandleChartProps> = ({
           }
         },
       },
-      tooltip: {
-        enabled: false,
-      },
+      tooltip: { enabled: false },
     },
     yaxis: {
       labels: {
@@ -245,11 +237,6 @@ const ApexCandleChart: React.FC<ApexCandleChartProps> = ({
     grid: {
       borderColor: "#f0f0f0",
       strokeDashArray: 2,
-      xaxis: {
-        lines: {
-          show: true,
-        },
-      },
       yaxis: {
         lines: {
           show: true,
@@ -280,10 +267,22 @@ const ApexCandleChart: React.FC<ApexCandleChartProps> = ({
     ],
   };
 
+  const lineSeries = data.map((item, index) => ({
+    x: index,
+    y: item.close,
+  }));
+
   const series = [
     {
       name: "OHLC",
       data: chartData,
+    },
+    {
+      name: "Trend",
+      type: "line",
+      data: lineSeries,
+      color: "#2196f3",
+      strokeWidth: 2,
     },
   ];
 
