@@ -1,12 +1,21 @@
 import ApexCandleChart from "@/components/ApexCandleChart";
-import { data } from "@/data";
+import HorizontalLineChart from "@/components/HorizontalLineChart";
+import { data, MSTRData } from "@/data";
 
 export default function Home() {
   return (
     <main className="flex flex-col min-h-screen p-6">
       <div className="flex flex-col items-center justify-center flex-1">
+        <h1 className="text-2xl font-bold mb-6">Candle &amp; Line Chart</h1>
         <ApexCandleChart
           data={data}
+          className="w-full max-w-5xl px-5 mx-auto"
+        />
+        <h1 className="text-2xl font-bold mb-6">
+          Candle &amp; Line Chart With Horizontal Lines
+        </h1>
+        <HorizontalLineChart
+          data={MSTRData}
           className="w-full max-w-5xl px-5 mx-auto"
         />
       </div>
